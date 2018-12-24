@@ -8,7 +8,7 @@ app = Flask(__name__)
 def hello_world():
     connection = http.client.HTTPConnection('www.python.org')
     
-    connection.request('GET', '' )
+    connection.request('GET', '/' )
     response = connection.getresponse()
     connection.close()
-    return 'Hello from Flask!' + response
+    return 'Hello from Flask!' + '\n' + str(response)
