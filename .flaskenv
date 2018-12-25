@@ -1,1 +1,1 @@
-FLASK_APP=flask_app.py
+FLASK_APP=football_bet.py
