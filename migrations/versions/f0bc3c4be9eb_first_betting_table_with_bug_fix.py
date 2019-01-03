@@ -1,8 +1,8 @@
-"""Added first betting tables
+"""First betting table with bug fix
 
-Revision ID: 20c370adbd17
+Revision ID: f0bc3c4be9eb
 Revises: 265c2bf3cb1a
-Create Date: 2019-01-01 14:58:07.024098
+Create Date: 2019-01-03 19:07:57.470148
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '20c370adbd17'
+revision = 'f0bc3c4be9eb'
 down_revision = '265c2bf3cb1a'
 branch_labels = None
 depends_on = None
@@ -36,12 +36,12 @@ def upgrade():
     sa.Column('away_team_id', sa.Integer(), nullable=True),
     sa.Column('end_score_id', sa.Integer(), nullable=True),
     sa.Column('extra_score_id', sa.Integer(), nullable=True),
-    sa.Column('shoutout_score_id', sa.Integer(), nullable=True),
+    sa.Column('shootout_score_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['away_team_id'], ['team.id'], ),
     sa.ForeignKeyConstraint(['end_score_id'], ['score.id'], ),
     sa.ForeignKeyConstraint(['extra_score_id'], ['score.id'], ),
     sa.ForeignKeyConstraint(['home_team_id'], ['team.id'], ),
-    sa.ForeignKeyConstraint(['shoutout_score_id'], ['score.id'], ),
+    sa.ForeignKeyConstraint(['shootout_score_id'], ['score.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_match_date'), 'match', ['date'], unique=False)
