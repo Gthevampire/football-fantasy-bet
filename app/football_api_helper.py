@@ -2,6 +2,7 @@ import http.client
 import json
 import datetime
 
+
 connection = http.client.HTTPConnection('api.football-data.org')
 headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
 
@@ -10,7 +11,7 @@ class FootballDataApi:
     def get_week_matchs(self, dateFrom, dateTo):
         connection.request('GET', '/v2/competitions/2015/matches?dateFrom='+dateFrom+'&dateTo='+dateTo, None, headers )
         response = json.loads(connection.getresponse().read().decode())
-        return str(response)
+        return json.dumps(response)
 
     def get_this_week_matchs(self):
         now = datetime.datetime.utcnow()

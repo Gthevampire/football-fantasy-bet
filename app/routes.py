@@ -6,9 +6,10 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
-from app.models import User
+from app.models import User, Match, Team
 from datetime import datetime
 from app.football_api_helper import FootballDataApi
+from sqlalchemy.orm import joinedload
 
 
 @app.before_request
@@ -59,21 +60,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-@app.route('/matches')
-@login_required
-def matches():
-    connection = http.client.HTTPConnection('api.football-data.org')
-    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
-    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
-    response = json.loads(connection.getresponse().read().decode())
-    connection.close()
-
-    football_api = FootballDataApi()
-
-    return str(football_api.get_this_week_matchs())
-    #return str(response)
-    #return render_template("matches.html")
-
 @app.route('/user/<username>')
 @login_required
 def user(username):
@@ -99,3 +85,40 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
+
+@app.route('/matchs')
+def matches():
+    connection = http.client.HTTPConnection('api.football-data.org')
+    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
+    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
+    response = json.loads(connection.getresponse().read().decode())
+    connection.close()
+
+    if "matches" not in response:
+        return "no matches\n"
+
+    for match_api in response['matches']:
+        home_team = Team.query.filter(Team.name == match_api["homeTeam"]["name"]).first()
+        if home_team is None:
+                home_team = Team()
+                home_team.name = match_api["homeTeam"]["name"]
+                db.session.add(home_team)
+                db.session.commit()
+
+        away_team = Team.query.filter(Team.name == match_api["awayTeam"]["name"]).first()
+        if away_team is None:
+                away_team = Team()
+                away_team.name = match_api["awayTeam"]["name"]
+                db.session.add(away_team)
+                db.session.commit()
+
+        match = Match.query.options(joinedload(Match.home_team), joinedload(Match.away_team)).filter(Match.home_team_id == home_team.id and Match.away_team_id == away_team.id).first()
+
+        # The match does not exist. We must add it to the database
+        #if match is None:
+        #    match = Match()
+        #    match.date = match_api["utcDate"]
+        #    match.date = match_api["status"]
+
+            #match.set
+    return "no error ?\n" + str(response)

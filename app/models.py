@@ -49,11 +49,16 @@ class Match(db.Model):
     end_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
     extra_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
     shootout_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    season_id = db.Column(db.Integer, db.ForeignKey('season.id'))
+    status_id = db.Column(db.Integer, db.ForeignKey('match_status.id'))
     home_team = db.relationship('Team', foreign_keys=home_team_id)
     away_team = db.relationship('Team', foreign_keys=away_team_id)
     end_score = db.relationship('Score', foreign_keys=end_score_id)
     extra_score = db.relationship('Score', foreign_keys=extra_score_id)
     shootout_score = db.relationship('Score', foreign_keys=shootout_score_id)
+    season = db.relationship('Season', foreign_keys=season_id)
+    status = db.relationship('MatchStatus', foreign_keys=status_id)
+    last_update = db.Column(db.DateTime)
 
 class Bet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,3 +76,24 @@ class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     home_goals = db.Column(db.Integer)
     away_goals = db.Column(db.Integer)
+
+class MatchStatus(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(40))
+
+class Season(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(9))
+
+class League(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(140))
+    code = db.Column(db.String(3))
+
+class Result(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
+    points = db.Column(db.Integer)
+    league = db.relationship('League', foreign_keys=league_id)
+
