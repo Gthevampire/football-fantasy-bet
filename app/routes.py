@@ -69,10 +69,10 @@ def matches():
     connection.close()
 
     football_api = FootballDataApi()
+    competition, match_list = football_api.get_this_week_matchs()
 
-    return str(football_api.get_this_week_matchs())
-    #return str(response)
-    #return render_template("matches.html")
+    return render_template("matches.html", \
+    title='Games', competition=competition, match_list=match_list)
 
 @app.route('/user/<username>')
 @login_required
