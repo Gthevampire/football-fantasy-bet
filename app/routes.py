@@ -69,7 +69,7 @@ def matches():
     connection.close()
 
     football_api = FootballDataApi()
-    competition, match_list = football_api.get_this_week_matchs()
+    competition, match_list = football_api.get_this_week_matches()
 
     return render_template("matches.html", \
     title='Games', competition=competition, match_list=match_list)
