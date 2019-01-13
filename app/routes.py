@@ -86,11 +86,11 @@ def edit_profile():
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
 
-@app.route('/matchs')
-def matches():
+@app.route('/update/<competition>')
+def updates(competition):
     connection = http.client.HTTPConnection('api.football-data.org')
     headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
-    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2018-08-01&dateTo=2019-06-31', None, headers )
+    connection.request('GET', '/v2/competitions/' + competition + '/matches', None, headers )
     response = json.loads(connection.getresponse().read().decode())
     connection.close()
 
