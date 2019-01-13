@@ -6,7 +6,7 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
-from app.models import User, Match, Team
+from app.models import User, FootballMatch, Team, MatchStatus, MatchScore, Score, Winner
 from datetime import datetime
 from app.football_api_helper import FootballDataApi
 from sqlalchemy.orm import joinedload
@@ -90,7 +90,7 @@ def edit_profile():
 def matches():
     connection = http.client.HTTPConnection('api.football-data.org')
     headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
-    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
+    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2018-08-01&dateTo=2019-06-31', None, headers )
     response = json.loads(connection.getresponse().read().decode())
     connection.close()
 
@@ -112,13 +112,50 @@ def matches():
                 db.session.add(away_team)
                 db.session.commit()
 
-        match = Match.query.options(joinedload(Match.home_team), joinedload(Match.away_team)).filter(Match.home_team_id == home_team.id and Match.away_team_id == away_team.id).first()
+        match = FootballMatch.query.options(joinedload(FootballMatch.home_team), joinedload(FootballMatch.away_team)).filter(FootballMatch.home_team_id == home_team.id, FootballMatch.away_team_id == away_team.id).first()
 
         # The match does not exist. We must add it to the database
-        #if match is None:
-        #    match = Match()
-        #    match.date = match_api["utcDate"]
-        #    match.date = match_api["status"]
+        if match is None:
+            match = FootballMatch()
+            #match.date = match_api["utcDate"]
+
+            match_status = MatchStatus()
+            #match_status.status = match_api["status"]
+            #match.status = match_status
+
+            match.home_team = home_team
+            match.away_team = away_team
+
+            #match.last_updated = match_api["lastUpdated"]
+
+            score = MatchScore()
+            #score.winner = Winner[match_api["score"]["winner"]]
+            full_time_score = Score()
+            half_time_score = Score()
+            extra_score = Score()
+            penalties_score = Score()
+            full_time_score.home_goals =  match_api["score"]["fullTime"]["homeTeam"]
+            full_time_score.away_goals =  match_api["score"]["fullTime"]["awayTeam"]
+            half_time_score.home_goals =  match_api["score"]["halfTime"]["homeTeam"]
+            half_time_score.away_goals =  match_api["score"]["halfTime"]["awayTeam"]
+            extra_score.home_goals =  match_api["score"]["extraTime"]["homeTeam"]
+            extra_score.away_goals =  match_api["score"]["extraTime"]["awayTeam"]
+            penalties_score.home_goals =  match_api["score"]["penalties"]["homeTeam"]
+            penalties_score.away_goals =  match_api["score"]["penalties"]["awayTeam"]
+            score.full_time_score = full_time_score
+            score.half_time_score = half_time_score
+            score.extra_score = extra_score
+            score.penalties_score = penalties_score
+            match.match_score = score
+
+            #db.session.add(match_status)
+            db.session.add(penalties_score)
+            db.session.add(full_time_score)
+            db.session.add(half_time_score)
+            db.session.add(extra_score)
+            db.session.add(score)
+            db.session.add(match)
+            db.session.commit()
 
             #match.set
     return "no error ?\n" + str(response)

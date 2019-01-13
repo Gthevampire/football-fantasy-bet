@@ -3,6 +3,8 @@ from app import db, login
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
+import enum
+from sqlalchemy import Enum
 
 
 @login.user_loader
@@ -41,31 +43,27 @@ class Post(db.Model):
     def __repr__(self):
         return '<Post {}>'.format(self.body)
 
-class Match(db.Model):
+class FootballMatch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, index=True)
+    last_updated = db.Column(db.DateTime)
     home_team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
     away_team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
-    end_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
-    extra_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
-    shootout_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    match_score_id = db.Column(db.Integer, db.ForeignKey('match_score.id'))
     season_id = db.Column(db.Integer, db.ForeignKey('season.id'))
     status_id = db.Column(db.Integer, db.ForeignKey('match_status.id'))
     home_team = db.relationship('Team', foreign_keys=home_team_id)
     away_team = db.relationship('Team', foreign_keys=away_team_id)
-    end_score = db.relationship('Score', foreign_keys=end_score_id)
-    extra_score = db.relationship('Score', foreign_keys=extra_score_id)
-    shootout_score = db.relationship('Score', foreign_keys=shootout_score_id)
+    match_score = db.relationship('MatchScore', foreign_keys=match_score_id)
     season = db.relationship('Season', foreign_keys=season_id)
     status = db.relationship('MatchStatus', foreign_keys=status_id)
-    last_update = db.Column(db.DateTime)
 
 class Bet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
+    match_id = db.Column(db.Integer, db.ForeignKey('football_match.id'))
     score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    match = db.relationship('Match', foreign_keys=match_id)
+    match = db.relationship('FootballMatch', foreign_keys=match_id)
     score = db.relationship('Score', foreign_keys=score_id)
 
 class Team(db.Model):
@@ -77,9 +75,41 @@ class Score(db.Model):
     home_goals = db.Column(db.Integer)
     away_goals = db.Column(db.Integer)
 
+class MatchScore(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    winner_id = db.Column(db.Integer, db.ForeignKey('winner.id'))
+    full_time_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    half_time_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    extra_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    penalties_score_id = db.Column(db.Integer, db.ForeignKey('score.id'))
+    winner = db.relationship('Winner', foreign_keys=winner_id)
+    full_time_score = db.relationship('Score', foreign_keys=full_time_score_id)
+    half_time_score = db.relationship('Score', foreign_keys=full_time_score_id)
+    extra_score = db.relationship('Score', foreign_keys=extra_score_id)
+    penalties_score = db.relationship('Score', foreign_keys=penalties_score_id)
+
+class EnumMatchStatus(enum.Enum):
+    POSTPONED = 1
+    SCHEDULED = 2
+    CANCELED = 3
+    SUSPENDED = 4
+    IN_PLAY = 5
+    PAUSED = 6
+    AWARDED = 7
+    LIVE = 8
+
 class MatchStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(40))
+    status = db.Column(Enum(EnumMatchStatus))
+
+class EnumWinner(enum.Enum):
+    HOME_TEAM = 1
+    AWAY_TEAM = 2
+    DRAW = 3
+
+class Winner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    winner = db.Column(Enum(EnumWinner))
 
 class Season(db.Model):
     id = db.Column(db.Integer, primary_key=True)
