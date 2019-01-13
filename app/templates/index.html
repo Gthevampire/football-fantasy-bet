@@ -2,4 +2,7 @@
 
 {% block content %}
     <h1>{{ title }}</h1>
+    {% if current_user.is_anonymous == false %}
+        <a href="{{ url_for('matches') }}">Match results for last round</a>
+    {% endif %}
 {% endblock %}

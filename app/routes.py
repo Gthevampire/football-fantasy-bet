@@ -159,3 +159,18 @@ def updates(competition):
 
             #match.set
     return "no error ?\n" + str(response)
+
+@app.route('/matches')
+@login_required
+def matches():
+    connection = http.client.HTTPConnection('api.football-data.org')
+    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
+    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
+    response = json.loads(connection.getresponse().read().decode())
+    connection.close()
+
+    football_api = FootballDataApi()
+    competition, match_list = football_api.get_this_week_matches()
+
+    return render_template("matches.html", \
+    title='Games', competition=competition, match_list=match_list)

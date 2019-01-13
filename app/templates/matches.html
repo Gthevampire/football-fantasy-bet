@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="3">{{ competition.area.name }} -
+                        {{ competition.name }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Home Team</td>
+                    <td>Score</td>
+                    <td>Away Team</td>
+                </tr>
+                {% for match in match_list %}
+                <tr>
+                    <td>{{ match.homeTeam.name }}</td>
+                    <td>{{ match.score.fullTime.homeTeam }} -
+                        {{ match.score.fullTime.awayTeam }}</td>
+                    <td>{{ match.awayTeam.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p><a href="{{ url_for('index') }}">Back to homepage</a></p>
+    <hr>
+{% endblock %}
