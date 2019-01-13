@@ -2,6 +2,7 @@ import http.client
 import json
 import datetime
 
+
 connection = http.client.HTTPConnection('api.football-data.org')
 headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
 

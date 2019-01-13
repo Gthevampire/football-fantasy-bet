@@ -6,9 +6,10 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
-from app.models import User
+from app.models import User, FootballMatch, Team, MatchStatus, MatchScore, Score, Winner
 from datetime import datetime
 from app.football_api_helper import FootballDataApi
+from sqlalchemy.orm import joinedload
 
 
 @app.before_request
@@ -59,21 +60,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-@app.route('/matches')
-@login_required
-def matches():
-    connection = http.client.HTTPConnection('api.football-data.org')
-    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
-    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
-    response = json.loads(connection.getresponse().read().decode())
-    connection.close()
-
-    football_api = FootballDataApi()
-    competition, match_list = football_api.get_this_week_matches()
-
-    return render_template("matches.html", \
-    title='Games', competition=competition, match_list=match_list)
-
 @app.route('/user/<username>')
 @login_required
 def user(username):
@@ -99,3 +85,92 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
+
+@app.route('/update/<competition>')
+def updates(competition):
+    connection = http.client.HTTPConnection('api.football-data.org')
+    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
+    connection.request('GET', '/v2/competitions/' + competition + '/matches', None, headers )
+    response = json.loads(connection.getresponse().read().decode())
+    connection.close()
+
+    if "matches" not in response:
+        return "no matches\n"
+
+    for match_api in response['matches']:
+        home_team = Team.query.filter(Team.name == match_api["homeTeam"]["name"]).first()
+        if home_team is None:
+                home_team = Team()
+                home_team.name = match_api["homeTeam"]["name"]
+                db.session.add(home_team)
+                db.session.commit()
+
+        away_team = Team.query.filter(Team.name == match_api["awayTeam"]["name"]).first()
+        if away_team is None:
+                away_team = Team()
+                away_team.name = match_api["awayTeam"]["name"]
+                db.session.add(away_team)
+                db.session.commit()
+
+        match = FootballMatch.query.options(joinedload(FootballMatch.home_team), joinedload(FootballMatch.away_team)).filter(FootballMatch.home_team_id == home_team.id, FootballMatch.away_team_id == away_team.id).first()
+
+        # The match does not exist. We must add it to the database
+        if match is None:
+            match = FootballMatch()
+            #match.date = match_api["utcDate"]
+
+            match_status = MatchStatus()
+            #match_status.status = match_api["status"]
+            #match.status = match_status
+
+            match.home_team = home_team
+            match.away_team = away_team
+
+            #match.last_updated = match_api["lastUpdated"]
+
+            score = MatchScore()
+            #score.winner = Winner[match_api["score"]["winner"]]
+            full_time_score = Score()
+            half_time_score = Score()
+            extra_score = Score()
+            penalties_score = Score()
+            full_time_score.home_goals =  match_api["score"]["fullTime"]["homeTeam"]
+            full_time_score.away_goals =  match_api["score"]["fullTime"]["awayTeam"]
+            half_time_score.home_goals =  match_api["score"]["halfTime"]["homeTeam"]
+            half_time_score.away_goals =  match_api["score"]["halfTime"]["awayTeam"]
+            extra_score.home_goals =  match_api["score"]["extraTime"]["homeTeam"]
+            extra_score.away_goals =  match_api["score"]["extraTime"]["awayTeam"]
+            penalties_score.home_goals =  match_api["score"]["penalties"]["homeTeam"]
+            penalties_score.away_goals =  match_api["score"]["penalties"]["awayTeam"]
+            score.full_time_score = full_time_score
+            score.half_time_score = half_time_score
+            score.extra_score = extra_score
+            score.penalties_score = penalties_score
+            match.match_score = score
+
+            #db.session.add(match_status)
+            db.session.add(penalties_score)
+            db.session.add(full_time_score)
+            db.session.add(half_time_score)
+            db.session.add(extra_score)
+            db.session.add(score)
+            db.session.add(match)
+            db.session.commit()
+
+            #match.set
+    return "no error ?\n" + str(response)
+
+@app.route('/matches')
+@login_required
+def matches():
+    connection = http.client.HTTPConnection('api.football-data.org')
+    headers = { 'X-Auth-Token': 'fe4c5aaa344a40a78cef8547f5840478' }
+    connection.request('GET', '/v2/competitions/2015/matches?dateFrom=2019-01-01&dateTo=2019-01-31', None, headers )
+    response = json.loads(connection.getresponse().read().decode())
+    connection.close()
+
+    football_api = FootballDataApi()
+    competition, match_list = football_api.get_this_week_matches()
+
+    return render_template("matches.html", \
+    title='Games', competition=competition, match_list=match_list)
